@@ -213,7 +213,7 @@ void TsdfServer::processPointCloudMessageAndInsert(
     const sensor_msgs::PointCloud2::Ptr& pointcloud_msg,
     const Transformation& T_G_C, const bool is_freespace_pointcloud) {
   // Convert the PCL pointcloud into our awesome format.
-
+  ROS_INFO("Converting the pointcloud to voxblox format");
   // Horrible hack fix to fix color parsing colors in PCL.
   bool color_pointcloud = false;
   for (size_t d = 0; d < pointcloud_msg->fields.size(); ++d) {
@@ -229,6 +229,7 @@ void TsdfServer::processPointCloudMessageAndInsert(
 
   // Convert differently depending on RGB or I type.
   if (color_pointcloud) {
+    ROS_INFO("It's a color pointcloud");
     pcl::PointCloud<pcl::PointXYZRGB> pointcloud_pcl;
     // pointcloud_pcl is modified below:
     pcl::fromROSMsg(*pointcloud_msg, pointcloud_pcl);
@@ -248,6 +249,7 @@ void TsdfServer::processPointCloudMessageAndInsert(
                 pointcloud_pcl.points[i].b, pointcloud_pcl.points[i].a));
     }
   } else {
+    ROS_INFO("its not a color pointcloud");
     pcl::PointCloud<pcl::PointXYZI> pointcloud_pcl;
     // pointcloud_pcl is modified below:
     pcl::fromROSMsg(*pointcloud_msg, pointcloud_pcl);
@@ -370,6 +372,7 @@ bool TsdfServer::getNextPointcloudFromQueue(
 
 void TsdfServer::insertPointcloud(
     const sensor_msgs::PointCloud2::Ptr& pointcloud_msg_in) {
+
   if (pointcloud_msg_in->header.stamp - last_msg_time_ptcloud_ >
       min_time_between_msgs_) {
     last_msg_time_ptcloud_ = pointcloud_msg_in->header.stamp;
@@ -391,8 +394,11 @@ void TsdfServer::insertPointcloud(
   if (!processed_any) {
     return;
   }
-
+  publish_tsdf_info_ = true;
+  verbose_ = true;
   if (publish_tsdf_info_) {
+    ROS_INFO("publishing stuff");
+
     publishAllUpdatedTsdfVoxels();
     publishTsdfSurfacePoints();
     publishTsdfOccupiedNodes();
